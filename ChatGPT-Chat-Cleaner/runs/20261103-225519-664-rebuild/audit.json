@@ -1,0 +1,43 @@
+{
+  "time": "2026-11-04T03:55:21.280049+00:00",
+  "databases": [
+    {
+      "database": "C:\\Users\\Administrator\\.codex\\sqlite\\codex.db",
+      "active": true,
+      "owners": [
+        {
+          "pid": 43132,
+          "name": "Codex"
+        }
+      ],
+      "schema_supported": true,
+      "operation": "rebuild_chat_cache",
+      "chat_cache_rows": 47,
+      "reset_hosts": 1,
+      "integrity": {
+        "integrity_check": [
+          "ok"
+        ],
+        "foreign_key_check": []
+      }
+    },
+    {
+      "database": "C:\\Users\\Administrator\\.codex\\sqlite\\codex-dev.db",
+      "active": false,
+      "owners": [],
+      "schema_supported": true,
+      "operation": "rebuild_chat_cache",
+      "chat_cache_rows": 0,
+      "reset_hosts": 0,
+      "integrity": {
+        "integrity_check": [
+          "ok"
+        ],
+        "foreign_key_check": []
+      }
+    }
+  ],
+  "rate_limit_seen": false,
+  "network_requests": 0,
+  "database_modified": false
+}

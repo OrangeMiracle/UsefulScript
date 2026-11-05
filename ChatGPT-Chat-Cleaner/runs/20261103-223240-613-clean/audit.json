@@ -1,0 +1,50 @@
+{
+  "time": "2026-11-04T03:32:42.024376+00:00",
+  "databases": [
+    {
+      "database": "C:\\Users\\Administrator\\.codex\\sqlite\\codex.db",
+      "active": true,
+      "owners": [
+        {
+          "pid": 24112,
+          "name": "Codex"
+        }
+      ],
+      "schema_supported": true,
+      "catalog_count": 124,
+      "explicit_candidates": 1,
+      "missing_candidates": 0,
+      "candidates": [
+        {
+          "thread_id": "6ae8d4dc-93d4-83ea-96d8-6b5a9862190e",
+          "title": "渐进式增长曲线解析"
+        }
+      ],
+      "integrity": {
+        "integrity_check": [
+          "ok"
+        ],
+        "foreign_key_check": []
+      }
+    },
+    {
+      "database": "C:\\Users\\Administrator\\.codex\\sqlite\\codex-dev.db",
+      "active": false,
+      "owners": [],
+      "schema_supported": true,
+      "catalog_count": 103,
+      "explicit_candidates": 0,
+      "missing_candidates": 0,
+      "candidates": [],
+      "integrity": {
+        "integrity_check": [
+          "ok"
+        ],
+        "foreign_key_check": []
+      }
+    }
+  ],
+  "rate_limit_seen": false,
+  "network_requests": 0,
+  "database_modified": false
+}

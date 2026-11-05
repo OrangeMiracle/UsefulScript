@@ -1,0 +1,48 @@
+ChatGPT Chat 本地目录维护工具
+所有新备份、日志和脚本版本备份均位于本工具文件夹内。
+
+"此脚本用于清理chatGPT desktop的chat聊天中已经删除的chat聊天会话。desktop并不能如同网页版一样实时同步chat会话记录，必须手动删除"
+
+入口
+Rebuild-Chat.cmd：重建当前活动数据库的全部ChatGPT目录缓存，无需逐条验证删除状态。
+Preview-Rebuild.cmd：只预览重建范围，不退出客户端、不写数据库。
+Clean.cmd：保留原有模式，仅清理近期日志明确确认conversation_deleted的记录。
+Audit.cmd：原有证据清理模式的只读检查。
+Rollback-Last.cmd：选择性回滚本工具最近一次成功操作。
+
+重建模式
+检查实际schema及DB/WAL/SHM占用，同时审计codex.db和codex-dev.db，只修改当前客户端使用的唯一活动库。
+双重校验host_kind=chatgpt及source_kind=chatgpt，要求host_id以chatgpt:开头且cwd为空；来源冲突或未知结构会拒绝写入。
+完全退出精确安装路径的客户端，确认无占用，重新采集相同Chat账号范围内的原始行和状态。
+通过SQLite backup API备份，单事务删除精确Chat目录行及相同Chat host的三个状态表记录：
+local_thread_catalog_sync_state、local_thread_catalog_scan_checkpoints、local_thread_catalog_scan_entries。
+catalog_revision增加1。其余所有目录行及表的摘要必须不变，完整性检查必须通过才提交并重开客户端。
+正常Chat标题随后可以重新出现，post-restart.json区分“缓存重置完成、同步待完成”和“客户端初始同步标记完成”，不把目录暂空误当作全量同步成功。
+
+为什么不只删目录行
+当前已检查客户端将缺失同步状态视为初始构建未完成。若只删行却保留初始构建完成标记、时间水位或分页检查点，增量同步可能不会补回全部旧聊天。
+仅重置Chat host的状态，保留其他host状态及host注册。此判断来自本机26.1027.3384.0版本代码检查；schema变化时需重新审查适配，不要盲目刷新白名单。
+
+保护范围及限制
+不向服务器删除或归档任何聊天。保留所有非chatgpt来源的Codex本地/SSH等任务目录行、sessions、archived_sessions、worktrees、正文和时间线、项目、凭据及其他数据库。
+来源为chatgpt的云端Work目录也属于可重建缓存，与本地Codex/Work任务不同。
+脚本不批量读取聊天正文、不请求服务器；客户端重开后自行分页同步，仍可能受网络、账号及限流影响，不能保证立即全量恢复。离线时列表可能暂空。
+重置会丢弃本地待同步标题等缓存字段。请先保存未发送内容并结束正在生成的回答，从资源管理器双击运行，避免从客户端集成终端启动。
+不删除DB文件、WAL/SHM或整个.codex目录。需要已安装Python 3.10+，无需第三方Python包或API key。
+原有证据清理仍要求新鲜、当前进程及账号可绑定的明确删除日志，429和普通404均不授权删除。
+
+存放位置
+backups\<运行时间-操作>\before.db：每次实际写入前的SQLite一致性备份。
+runs\<运行时间-操作>\：audit.json、plan.json、result.json、post-restart.json、run.jsonl、desktop.jsonl及错误日志。
+script-backups\<修改时间>\：修改前的脚本版本。
+此前runs内的旧备份与日志原样保留，不自动删除或迁移。整个工具文件夹可一起移动，不能只复制cmd。
+
+回滚
+对原有证据清理，回滚精确原始行，已有目标则拒绝覆盖。
+对重建缓存，只补回仍缺失的原始目录行，保留服务器已经补回或更新的行，不将旧同步水位覆盖到新同步状态；回滚本身也先备份并事务执行。
+这只能恢复目录缓存，不能恢复云端已删除的聊天正文。不要在客户端运行时覆盖数据库，不建议整库还原覆盖后续正常数据。
+
+验证
+临时数据库测试覆盖原有6项、Chat专属目录与同步状态清空、保护本地来源、状态变化拒绝、空缓存状态重置及选择性合并回滚。
+已在本机运行Windows PowerShell只读重建预览，当前活动库识别成功，网络请求0、数据库修改false。
+此次只修改工具并测试，没有对用户数据库执行真实重建，也未新增或修改计划任务。

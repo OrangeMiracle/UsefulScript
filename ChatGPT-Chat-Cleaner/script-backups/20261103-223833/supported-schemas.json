@@ -1,0 +1,378 @@
+{
+  "codex.db": [
+    [
+      "index",
+      "automations_owner_idx",
+      "automations",
+      "CREATE INDEX automations_owner_idx\n        ON automations (account_id, user_id, installation_id)"
+    ],
+    [
+      "index",
+      "local_thread_catalog_created_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_created_idx\n            ON local_thread_catalog (\n              host_id, source_created_at DESC, source_updated_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_cwd_created_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_cwd_created_idx\n            ON local_thread_catalog (\n              host_id, cwd, source_created_at DESC, source_updated_at DESC,\n              thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_cwd_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_cwd_updated_idx\n            ON local_thread_catalog (\n              host_id, cwd, source_recency_at DESC, source_created_at DESC,\n              thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_origin_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_origin_updated_idx\n            ON local_thread_catalog (\n              host_id, conversation_origin, source_recency_at DESC,\n              source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_project_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_project_updated_idx\n            ON local_thread_catalog (\n              host_id, project_id, source_recency_at DESC,\n              source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_thread_lookup_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_thread_lookup_idx\n            ON local_thread_catalog (\n              thread_id, source_recency_at DESC, source_created_at DESC, host_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_updated_idx\n            ON local_thread_catalog (\n              host_id, source_recency_at DESC, source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "sqlite_autoindex_automation_runs_1",
+      "automation_runs",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_automations_1",
+      "automations",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_codex_schema_migrations_1",
+      "codex_schema_migrations",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_inbox_items_1",
+      "inbox_items",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_app_server_feature_enablement_1",
+      "local_app_server_feature_enablement",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_1",
+      "local_thread_catalog",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_hosts_1",
+      "local_thread_catalog_hosts",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_scan_checkpoints_1",
+      "local_thread_catalog_scan_checkpoints",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_sync_state_1",
+      "local_thread_catalog_sync_state",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_thread_timeline_ledger_2",
+      "thread_timeline_ledger",
+      null
+    ],
+    [
+      "table",
+      "automation_runs",
+      "automation_runs",
+      "CREATE TABLE automation_runs (\n          thread_id TEXT PRIMARY KEY,\n          automation_id TEXT NOT NULL,\n          status TEXT NOT NULL,\n          read_at INTEGER,\n          thread_title TEXT,\n          source_cwd TEXT,\n          inbox_title TEXT,\n          inbox_summary TEXT,\n          created_at INTEGER NOT NULL,\n          updated_at INTEGER NOT NULL\n        , archived_user_message TEXT, archived_assistant_message TEXT, archived_reason TEXT)"
+    ],
+    [
+      "table",
+      "automations",
+      "automations",
+      "CREATE TABLE automations (\n          id TEXT PRIMARY KEY,\n          name TEXT NOT NULL,\n          prompt TEXT NOT NULL,\n          status TEXT NOT NULL DEFAULT 'ACTIVE',\n          next_run_at INTEGER,\n          last_run_at INTEGER,\n          cwds TEXT NOT NULL DEFAULT '[]',\n          rrule TEXT NOT NULL DEFAULT 'FREQ=HOURLY;INTERVAL=24;BYMINUTE=0',\n          model TEXT,\n          reasoning_effort TEXT,\n          created_at INTEGER NOT NULL,\n          updated_at INTEGER NOT NULL\n        , target_type TEXT, project_id TEXT, kind TEXT NOT NULL DEFAULT 'cron', target_thread_id TEXT, execution_environment TEXT, local_environment_config_path TEXT, plugin_template_id TEXT, notification_policy TEXT, account_id TEXT, user_id TEXT, installation_id TEXT, legacy_automation_id TEXT, auto_archive INTEGER NOT NULL DEFAULT 0, next_run_nominal_at INTEGER)"
+    ],
+    [
+      "table",
+      "codex_schema_migrations",
+      "codex_schema_migrations",
+      "CREATE TABLE codex_schema_migrations (\n      id TEXT PRIMARY KEY,\n      predecessor_id TEXT,\n      checksum TEXT NOT NULL,\n      applied_at INTEGER NOT NULL,\n      app_version TEXT,\n      build_flavor TEXT,\n      build_commit TEXT\n    )"
+    ],
+    [
+      "table",
+      "inbox_items",
+      "inbox_items",
+      "CREATE TABLE inbox_items (\n          id TEXT PRIMARY KEY,\n          title TEXT\n        , description TEXT, thread_id TEXT, read_at INTEGER, created_at INTEGER)"
+    ],
+    [
+      "table",
+      "live_visualization_suggestions",
+      "live_visualization_suggestions",
+      "CREATE TABLE live_visualization_suggestions (\n          account_id TEXT NOT NULL,\n          user_id TEXT NOT NULL,\n          host_id TEXT NOT NULL,\n          thread_id TEXT NOT NULL,\n          id TEXT NOT NULL,\n          title TEXT NOT NULL,\n          description TEXT NOT NULL,\n          status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'dismissed')),\n          submission TEXT CHECK (submission IN ('submitted', 'accepted')), turn_id TEXT, creation_turn_id TEXT,\n          PRIMARY KEY (account_id, user_id, host_id, thread_id)\n        ) WITHOUT ROWID"
+    ],
+    [
+      "table",
+      "local_app_server_feature_enablement",
+      "local_app_server_feature_enablement",
+      "CREATE TABLE local_app_server_feature_enablement (\n          feature_name TEXT PRIMARY KEY,\n          enabled INTEGER NOT NULL,\n          updated_at INTEGER NOT NULL\n        )"
+    ],
+    [
+      "table",
+      "local_thread_catalog",
+      "local_thread_catalog",
+      "CREATE TABLE \"local_thread_catalog\" (\n            host_id TEXT NOT NULL,\n            thread_id TEXT NOT NULL,\n            display_title TEXT NOT NULL,\n            source_created_at REAL NOT NULL,\n            source_updated_at REAL NOT NULL,\n            cwd TEXT,\n            source_kind TEXT NOT NULL,\n            source_detail TEXT,\n            model_provider TEXT,\n            git_branch TEXT,\n            observation_sequence INTEGER NOT NULL,\n            missing_candidate INTEGER NOT NULL DEFAULT 0\n              CHECK (missing_candidate IN (0, 1)),\n            thread_source TEXT,\n            source_recency_at REAL NOT NULL DEFAULT 0,\n            pending_observed_title INTEGER NOT NULL DEFAULT 0,\n            project_id TEXT,\n            conversation_origin TEXT, trial_conversation_type TEXT, chatgpt_async_status INTEGER,\n            PRIMARY KEY (host_id, thread_id)\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_hosts",
+      "local_thread_catalog_hosts",
+      "CREATE TABLE \"local_thread_catalog_hosts\" (\n            host_id TEXT PRIMARY KEY,\n            host_kind TEXT NOT NULL CHECK (\n              host_kind IN ('local', 'ssh', 'wsl', 'remote-control', 'chatgpt')\n            )\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_metadata",
+      "local_thread_catalog_metadata",
+      "CREATE TABLE local_thread_catalog_metadata (\n            id INTEGER PRIMARY KEY CHECK (id = 1),\n            catalog_revision INTEGER NOT NULL DEFAULT 0\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_scan_checkpoints",
+      "local_thread_catalog_scan_checkpoints",
+      "CREATE TABLE local_thread_catalog_scan_checkpoints (\n          host_id TEXT PRIMARY KEY,\n          checkpoint TEXT NOT NULL,\n          failed_at INTEGER\n        )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_scan_entries",
+      "local_thread_catalog_scan_entries",
+      "CREATE TABLE local_thread_catalog_scan_entries (\n          host_id TEXT NOT NULL,\n          thread_id TEXT NOT NULL,\n          removed INTEGER NOT NULL DEFAULT 0,\n          PRIMARY KEY (host_id, thread_id)\n        ) WITHOUT ROWID"
+    ],
+    [
+      "table",
+      "local_thread_catalog_sync_state",
+      "local_thread_catalog_sync_state",
+      "CREATE TABLE local_thread_catalog_sync_state (\n            host_id TEXT PRIMARY KEY,\n            watermark_updated_at REAL,\n            initial_build_complete INTEGER NOT NULL DEFAULT 0,\n            observation_sequence INTEGER NOT NULL DEFAULT 0\n          , last_full_reconciled_at INTEGER)"
+    ],
+    [
+      "table",
+      "thread_timeline_ledger",
+      "thread_timeline_ledger",
+      "CREATE TABLE thread_timeline_ledger (\n            host_id TEXT NOT NULL,\n            thread_id TEXT NOT NULL,\n            sequence INTEGER NOT NULL,\n            record_id TEXT NOT NULL,\n            payload_json TEXT NOT NULL,\n            PRIMARY KEY (host_id, thread_id, sequence),\n            UNIQUE (host_id, thread_id, record_id)\n          ) WITHOUT ROWID"
+    ]
+  ],
+  "codex-dev.db": [
+    [
+      "index",
+      "automations_owner_idx",
+      "automations",
+      "CREATE INDEX automations_owner_idx\n            ON automations (account_id, user_id, installation_id)"
+    ],
+    [
+      "index",
+      "local_thread_catalog_created_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_created_idx\n            ON local_thread_catalog (\n              host_id, source_created_at DESC, source_updated_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_cwd_created_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_cwd_created_idx\n            ON local_thread_catalog (\n              host_id, cwd, source_created_at DESC, source_updated_at DESC,\n              thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_cwd_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_cwd_updated_idx\n            ON local_thread_catalog (\n              host_id, cwd, source_recency_at DESC, source_created_at DESC,\n              thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_origin_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_origin_updated_idx\n            ON local_thread_catalog (\n              host_id, conversation_origin, source_recency_at DESC,\n              source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_project_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_project_updated_idx\n            ON local_thread_catalog (\n              host_id, project_id, source_recency_at DESC,\n              source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_thread_lookup_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_thread_lookup_idx\n            ON local_thread_catalog (\n              thread_id, source_recency_at DESC, source_created_at DESC, host_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "local_thread_catalog_updated_idx",
+      "local_thread_catalog",
+      "CREATE INDEX local_thread_catalog_updated_idx\n            ON local_thread_catalog (\n              host_id, source_recency_at DESC, source_created_at DESC, thread_id\n            ) WHERE missing_candidate = 0"
+    ],
+    [
+      "index",
+      "sqlite_autoindex_automation_runs_1",
+      "automation_runs",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_automations_1",
+      "automations",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_codex_schema_migrations_1",
+      "codex_schema_migrations",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_inbox_items_1",
+      "inbox_items",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_app_server_feature_enablement_1",
+      "local_app_server_feature_enablement",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_1",
+      "local_thread_catalog",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_hosts_1",
+      "local_thread_catalog_hosts",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_scan_checkpoints_1",
+      "local_thread_catalog_scan_checkpoints",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_local_thread_catalog_sync_state_1",
+      "local_thread_catalog_sync_state",
+      null
+    ],
+    [
+      "index",
+      "sqlite_autoindex_thread_timeline_ledger_2",
+      "thread_timeline_ledger",
+      null
+    ],
+    [
+      "table",
+      "automation_runs",
+      "automation_runs",
+      "CREATE TABLE automation_runs (\n            thread_id TEXT PRIMARY KEY,\n            automation_id TEXT NOT NULL,\n            status TEXT NOT NULL,\n            read_at INTEGER,\n            thread_title TEXT,\n            source_cwd TEXT,\n            inbox_title TEXT,\n            inbox_summary TEXT,\n            created_at INTEGER NOT NULL,\n            updated_at INTEGER NOT NULL\n          , archived_user_message TEXT, archived_assistant_message TEXT, archived_reason TEXT)"
+    ],
+    [
+      "table",
+      "automations",
+      "automations",
+      "CREATE TABLE automations (\n            id TEXT PRIMARY KEY,\n            name TEXT NOT NULL,\n            prompt TEXT NOT NULL,\n            status TEXT NOT NULL DEFAULT 'ACTIVE',\n            next_run_at INTEGER,\n            last_run_at INTEGER,\n            cwds TEXT NOT NULL DEFAULT '[]',\n            rrule TEXT NOT NULL DEFAULT 'FREQ=HOURLY;INTERVAL=24;BYMINUTE=0',\n            model TEXT,\n            reasoning_effort TEXT,\n            created_at INTEGER NOT NULL,\n            updated_at INTEGER NOT NULL\n          , target_type TEXT, project_id TEXT, kind TEXT NOT NULL DEFAULT 'cron', target_thread_id TEXT, execution_environment TEXT, local_environment_config_path TEXT, plugin_template_id TEXT, notification_policy TEXT, account_id TEXT, user_id TEXT, installation_id TEXT, legacy_automation_id TEXT, auto_archive INTEGER NOT NULL DEFAULT 0, next_run_nominal_at INTEGER)"
+    ],
+    [
+      "table",
+      "codex_schema_migrations",
+      "codex_schema_migrations",
+      "CREATE TABLE codex_schema_migrations (\n      id TEXT PRIMARY KEY,\n      predecessor_id TEXT,\n      checksum TEXT NOT NULL,\n      applied_at INTEGER NOT NULL,\n      app_version TEXT,\n      build_flavor TEXT,\n      build_commit TEXT\n    )"
+    ],
+    [
+      "table",
+      "inbox_items",
+      "inbox_items",
+      "CREATE TABLE inbox_items (\n            id TEXT PRIMARY KEY,\n            title TEXT\n          , description TEXT, thread_id TEXT, read_at INTEGER, created_at INTEGER)"
+    ],
+    [
+      "table",
+      "live_visualization_suggestions",
+      "live_visualization_suggestions",
+      "CREATE TABLE live_visualization_suggestions (\n          account_id TEXT NOT NULL,\n          user_id TEXT NOT NULL,\n          host_id TEXT NOT NULL,\n          thread_id TEXT NOT NULL,\n          id TEXT NOT NULL,\n          title TEXT NOT NULL,\n          description TEXT NOT NULL,\n          status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'dismissed')),\n          submission TEXT CHECK (submission IN ('submitted', 'accepted')), turn_id TEXT, creation_turn_id TEXT,\n          PRIMARY KEY (account_id, user_id, host_id, thread_id)\n        ) WITHOUT ROWID"
+    ],
+    [
+      "table",
+      "local_app_server_feature_enablement",
+      "local_app_server_feature_enablement",
+      "CREATE TABLE local_app_server_feature_enablement (\n            feature_name TEXT PRIMARY KEY,\n            enabled INTEGER NOT NULL,\n            updated_at INTEGER NOT NULL\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog",
+      "local_thread_catalog",
+      "CREATE TABLE \"local_thread_catalog\" (\n            host_id TEXT NOT NULL,\n            thread_id TEXT NOT NULL,\n            display_title TEXT NOT NULL,\n            source_created_at REAL NOT NULL,\n            source_updated_at REAL NOT NULL,\n            cwd TEXT,\n            source_kind TEXT NOT NULL,\n            source_detail TEXT,\n            model_provider TEXT,\n            git_branch TEXT,\n            observation_sequence INTEGER NOT NULL,\n            missing_candidate INTEGER NOT NULL DEFAULT 0\n              CHECK (missing_candidate IN (0, 1)),\n            thread_source TEXT,\n            source_recency_at REAL NOT NULL DEFAULT 0,\n            pending_observed_title INTEGER NOT NULL DEFAULT 0,\n            project_id TEXT,\n            conversation_origin TEXT, trial_conversation_type TEXT, chatgpt_async_status INTEGER,\n            PRIMARY KEY (host_id, thread_id)\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_hosts",
+      "local_thread_catalog_hosts",
+      "CREATE TABLE \"local_thread_catalog_hosts\" (\n            host_id TEXT PRIMARY KEY,\n            host_kind TEXT NOT NULL CHECK (\n              host_kind IN ('local', 'ssh', 'wsl', 'remote-control', 'chatgpt')\n            )\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_metadata",
+      "local_thread_catalog_metadata",
+      "CREATE TABLE local_thread_catalog_metadata (\n            id INTEGER PRIMARY KEY CHECK (id = 1),\n            catalog_revision INTEGER NOT NULL DEFAULT 0\n          )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_scan_checkpoints",
+      "local_thread_catalog_scan_checkpoints",
+      "CREATE TABLE local_thread_catalog_scan_checkpoints (\n          host_id TEXT PRIMARY KEY,\n          checkpoint TEXT NOT NULL,\n          failed_at INTEGER\n        )"
+    ],
+    [
+      "table",
+      "local_thread_catalog_scan_entries",
+      "local_thread_catalog_scan_entries",
+      "CREATE TABLE local_thread_catalog_scan_entries (\n          host_id TEXT NOT NULL,\n          thread_id TEXT NOT NULL,\n          removed INTEGER NOT NULL DEFAULT 0,\n          PRIMARY KEY (host_id, thread_id)\n        ) WITHOUT ROWID"
+    ],
+    [
+      "table",
+      "local_thread_catalog_sync_state",
+      "local_thread_catalog_sync_state",
+      "CREATE TABLE local_thread_catalog_sync_state (\n            host_id TEXT PRIMARY KEY,\n            watermark_updated_at REAL,\n            initial_build_complete INTEGER NOT NULL DEFAULT 0,\n            observation_sequence INTEGER NOT NULL DEFAULT 0\n          , last_full_reconciled_at INTEGER)"
+    ],
+    [
+      "table",
+      "thread_timeline_ledger",
+      "thread_timeline_ledger",
+      "CREATE TABLE thread_timeline_ledger (\n            host_id TEXT NOT NULL,\n            thread_id TEXT NOT NULL,\n            sequence INTEGER NOT NULL,\n            record_id TEXT NOT NULL,\n            payload_json TEXT NOT NULL,\n            PRIMARY KEY (host_id, thread_id, sequence),\n            UNIQUE (host_id, thread_id, record_id)\n          ) WITHOUT ROWID"
+    ]
+  ]
+}

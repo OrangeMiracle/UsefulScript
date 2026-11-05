@@ -1,0 +1,13 @@
+{
+  "status": "cache_reset_verified_sync_pending",
+  "time": "2026-11-04T03:55:35.457088+00:00",
+  "operation": "rebuild_chat_cache",
+  "chat_cache_rows": 0,
+  "initial_build_complete": false,
+  "integrity": {
+    "integrity_check": [
+      "ok"
+    ],
+    "foreign_key_check": []
+  }
+}

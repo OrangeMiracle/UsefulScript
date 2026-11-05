@@ -1,0 +1,4 @@
+{"time": "2026-11-04T03:55:21.281738+00:00", "event": "prepared", "plans": 1, "network_requests": 0, "rate_limit_seen": false}
+{"time": "2026-11-04T03:55:30.050530+00:00", "event": "offline_rebuild_snapshot", "chat_rows": 47, "hosts": 1}
+{"time": "2026-11-04T03:55:30.077676+00:00", "event": "consistent_backup", "path": "C:\\Users\\Administrator\\Desktop\\ChatGPT-Chat-Cleaner\\backups\\20261103-225519-664-rebuild\\before.db", "sha256": "52e50c7a383379c2a4b0dc28d3771db826a43a8d431227e39ce783d7ea7cf010"}
+{"time": "2026-11-04T03:55:30.082750+00:00", "event": "repair_committed", "count": 47}
