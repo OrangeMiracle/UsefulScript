@@ -1,0 +1,27 @@
+简体中文：小米兰亭 Pro 与 JetBrains Mono 混排。
+繁體中文：終端機、編輯器與程式碼對齊測試。
+「引号」『书名』《字体》【标点】；（全角）％￥
+他说：“很好！” 她答：‘明白了。’ 甲·乙——省略……
+ASCII: 0O 1Il /\\ [] {} () <> #$%& @^_ ~ | +-*=
+Ops: != == => >= <= === !== -> && || ++ := <-
+
+Python
+def ready(value: int) -> bool:
+    return value != 0 and value <= 10  # 中文备注
+
+Go
+func ready(n int) bool {
+    return n >= 1 && n != 10 // 返回布尔值
+}
+
+JavaScript
+const ready = n => n === 1 || n >= 10;
+console.log(ready(10), "状态：就绪");
+
+|1234567890123456|END
+|中文對齊測試文字|END
+|a中b文c漢d字1234|END
+|ＡＢＣ１２３！？|END
+┌────────────────┐
+│终端 TEST 0123　│
+└────────────────┘

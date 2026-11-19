@@ -1,0 +1,97 @@
+--- a/panels/power/cc-power-panel.blp
++++ b/panels/power/cc-power-panel.blp
+@@ -215,6 +215,11 @@
+                 values: "[60, 120, 180, 240, 300, 480, 600, 720, 900]";
+                 value-type: seconds;
+               }
++
++              Adw.SwitchRow keep_external_monitor_awake_row {
++                title: _("Keep Screen On with an External Monitor");
++                subtitle: _("Pauses automatic screen blanking, locking, and idle suspend while an external monitor is active.");
++              }
+             }
+ 
+             Adw.PreferencesGroup suspend_on_battery_group {
+--- a/panels/power/cc-power-panel.c
++++ b/panels/power/cc-power-panel.c
+@@ -66,6 +66,7 @@
+   AdwSwitchRow      *blank_screen_switch_row;
+   CcNumberRow       *blank_screen_delay_row;
+   AdwPreferencesGroup *blank_screen_group;
++  AdwSwitchRow      *keep_external_monitor_awake_row;
+   GtkListBox        *device_listbox;
+   AdwPreferencesGroup *device_section;
+   AdwSwitchRow      *dim_screen_row;
+@@ -1386,6 +1387,7 @@
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, blank_screen_delay_row);
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, blank_screen_group);
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, blank_screen_switch_row);
++  gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, keep_external_monitor_awake_row);
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, device_listbox);
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, device_section);
+   gtk_widget_class_bind_template_child (widget_class, CcPowerPanel, dim_screen_row);
+@@ -1423,6 +1425,8 @@
+ {
+   guint i;
+   g_autoptr(GtkCssProvider) provider = NULL;
++  g_autoptr(GSettingsSchema) external_monitor_schema = NULL;
++  g_autoptr(GSettings) external_monitor_settings = NULL;
+ 
+   g_resources_register (cc_power_get_resource ());
+ 
+@@ -1458,6 +1462,19 @@
+   setup_power_profiles (self);
+ 
+   setup_power_saving (self);
++  external_monitor_schema = g_settings_schema_source_lookup (g_settings_schema_source_get_default (),
++                                                           "io.github.orangemiracle.usefulscript.power",
++                                                           TRUE);
++  if (external_monitor_schema)
++    {
++      external_monitor_settings = g_settings_new_full (external_monitor_schema, NULL, NULL);
++      g_settings_bind (external_monitor_settings, "keep-external-monitor-awake",
++                       self->keep_external_monitor_awake_row, "active",
++                       G_SETTINGS_BIND_DEFAULT);
++    }
++  else
++    gtk_widget_set_visible (GTK_WIDGET (self->keep_external_monitor_awake_row), FALSE);
++
+   g_settings_bind (self->gsd_settings, "power-saver-profile-on-low-battery",
+                    self->power_saver_low_battery_row, "active",
+                    G_SETTINGS_BIND_DEFAULT);
+--- a/po/zh_CN.po
++++ b/po/zh_CN.po
+@@ -4860,6 +4860,12 @@
+ msgid "D_elay"
+ msgstr "延时(_E)"
+ 
++msgid "Keep Screen On with an External Monitor"
++msgstr "接入外屏时保持常亮"
++
++msgid "Pauses automatic screen blanking, locking, and idle suspend while an external monitor is active."
++msgstr "外屏启用时，暂停自动熄屏、自动锁屏和空闲挂起。"
++
+ #: panels/power/cc-power-panel.blp:221
+ msgid "Automatic Suspend"
+ msgstr "自动挂起"
+--- a/shell/meson.build
++++ b/shell/meson.build
+@@ -174,5 +174,6 @@
+ 
+ install_data (
+   'org.gnome.Settings.gschema.xml',
++  'io.github.orangemiracle.usefulscript.power.gschema.xml',
+   install_dir : control_center_schemadir
+ )
+--- /dev/null
++++ b/shell/io.github.orangemiracle.usefulscript.power.gschema.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<schemalist>
++  <schema id="io.github.orangemiracle.usefulscript.power" path="/io/github/orangemiracle/usefulscript/power/">
++    <key name="keep-external-monitor-awake" type="b">
++      <default>false</default>
++      <summary>Keep the screen on when an external monitor is active</summary>
++    </key>
++  </schema>
++</schemalist>

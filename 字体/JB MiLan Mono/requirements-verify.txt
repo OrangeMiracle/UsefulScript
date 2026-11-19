@@ -1,0 +1,3 @@
+-r requirements.txt
+uharfbuzz==0.53.3
+Pillow==12.1.1

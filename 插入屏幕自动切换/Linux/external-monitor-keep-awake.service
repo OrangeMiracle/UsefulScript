@@ -1,0 +1,13 @@
+# Managed by UsefulScript GNOME Settings
+[Unit]
+Description=Keep the GNOME screen awake while an external monitor is active
+PartOf=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=%h/.local/bin/gnome-control-center --external-monitor-service
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=graphical-session.target
