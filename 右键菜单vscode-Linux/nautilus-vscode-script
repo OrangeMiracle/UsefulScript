@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+import os
+
+from gi.repository import Gio
+
+
+selected = os.environ.get("NAUTILUS_SCRIPT_SELECTED_URIS", "").splitlines()
+current = os.environ.get("NAUTILUS_SCRIPT_CURRENT_URI", "")
+uris = selected + [current] if len(selected) == 1 else [current]
+
+for uri in uris:
+    if not uri.startswith("file:"):
+        continue
+
+    path = Gio.File.new_for_uri(uri).get_path()
+    if path and os.path.isdir(path):
+        code = "/snap/bin/code"
+        os.execv(code, [code, "--force-user-env", "--new-window", path])
