@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Codex -> Devin / Claude Code: private per-session/per-run artifacts, bounded stdout.
+# Codex -> Devin / Claude Code / Antigravity: per-run artifacts, bounded stdout.
 set -u
 umask 077
 
-if [[ $# -lt 2 || $# -gt 3 || ( "$1" != devin && "$1" != claude ) || ! -f "$2" ]]; then
-  echo 'Usage: delegate.sh {devin|claude} /path/to/task.md [resume-session-id]' >&2
+if [[ $# -lt 2 || $# -gt 3 || ( "$1" != devin && "$1" != claude && "$1" != agy ) || ! -f "$2" ]]; then
+  echo 'Usage: delegate.sh {devin|claude|agy} /path/to/task.md [resume-session-id]' >&2
   exit 2
 fi
 command -v python3 >/dev/null 2>&1 || { echo 'ERROR: python3 required' >&2; exit 2; }
@@ -43,18 +43,29 @@ if [[ "$agent" == devin ]]; then
     --prompt-file "$task" --export "$pending/transcript.json")
   [[ -z "$resume" ]] || args+=(--resume "$resume")
   CI=1 NO_COLOR=1 TERM=dumb devin "${args[@]}" > "$raw" 2> "$err" || code=$?
-else
+elif [[ "$agent" == claude ]]; then
   args=(--print --output-format json)
   [[ -z "$resume" ]] || args+=(--resume "$resume")
   CI=1 NO_COLOR=1 TERM=dumb claude "${args[@]}" \
     'Complete the task specified in standard input.' < "$task" > "$raw" 2> "$err" || code=$?
+else
+  args=(--input-format stream-json --output-format stream-json)
+  [[ -z "$resume" ]] || args+=(--conversation "$resume")
+  {
+    python3 - "$task" <<'PY' | CI=1 NO_COLOR=1 TERM=dumb agy "${args[@]}" > "$raw"
+import json, pathlib, sys
+
+task = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig')
+print(json.dumps({'event': 'user', 'message': {'content': task}}))
+PY
+  } 2> "$err" || code=$?
 fi
 
 if [[ "$agent" == devin && -z "$resume" ]]; then
   devin list --format json > "$pending/after.json" 2>/dev/null || rm -f "$pending/after.json"
 fi
 
-# One output row: session-id, detection source, agent-reported error (tab-separated).
+# One output row: session-id, detection source, agent-reported error (pipe-separated).
 parse=$(python3 - "$agent" "$pending" "$resume" "$PWD" "$code" <<'PY'
 import json, pathlib, re, sys
 agent, folder, resume, cwd, cli_exit = sys.argv[1:]
@@ -74,7 +85,6 @@ def clean(s):
     return re.sub(r'[\x00-\x08\x0b-\x1f\x7f]', '', s.replace('\r\n', '\n'))
 
 session, source, agent_error = resume, 'resume' if resume else 'unresolved', False
-output = (p / 'stdout.log').read_text(encoding='utf-8-sig', errors='replace')
 if agent == 'claude':
     obj = load('stdout.log')
     if isinstance(obj, dict):
@@ -89,7 +99,32 @@ if agent == 'claude':
     else:
         (p / 'result.md').write_text('Claude did not return valid JSON. See `stdout.log` and `stderr.log`.\n', encoding='utf-8')
         agent_error = True
+elif agent == 'agy':
+    result = None
+    with (p / 'stdout.log').open(encoding='utf-8-sig', errors='replace') as stream:
+        for line in stream:
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(event, dict) and event.get('event') == 'result':
+                result = event.get('result')
+
+    reply = 'Antigravity did not return a valid result event. See `stdout.log` and `stderr.log`.\n'
+    agent_error = True
+    if isinstance(result, dict):
+        actual = result.get('conversation_id')
+        if isinstance(actual, str) and actual:
+            session, source = actual, 'agy-json'
+        response = result.get('response')
+        if isinstance(response, str):
+            agent_error = result.get('status') != 'SUCCESS'
+            reply = response
+            if agent_error and not response.strip():
+                reply = 'Antigravity did not complete the turn. See `stdout.log` and `stderr.log`.\n'
+    (p / 'result.md').write_text(clean(reply), encoding='utf-8')
 else:
+    output = (p / 'stdout.log').read_text(encoding='utf-8-sig', errors='replace')
     (p / 'result.md').write_text(clean(output), encoding='utf-8')
     obj = load('transcript.json')
     if isinstance(obj, dict) and isinstance(obj.get('session_id'), str) and obj['session_id']:

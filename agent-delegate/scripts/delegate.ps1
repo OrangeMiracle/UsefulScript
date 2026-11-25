@@ -1,9 +1,9 @@
 #Requires -Version 7.0
-<# Codex -> Devin/Claude Code. One session directory, one subdirectory per run.
+<# Codex -> Devin/Claude Code/Antigravity. One subdirectory per run.
    All raw output stays on disk; only a bounded summary reaches Codex. #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory, Position=0)][ValidateSet('devin','claude')][string]$Agent,
+    [Parameter(Mandatory, Position=0)][ValidateSet('devin','claude','agy')][string]$Agent,
     [Parameter(Mandatory, Position=1)][string]$TaskFile,
     [Parameter(Position=2)][string]$ResumeSessionId = ''
 )
@@ -85,6 +85,7 @@ if ($Agent -eq 'devin' -and -not $ResumeSessionId) {
 $oldCI = $env:CI
 $oldNoColor = $env:NO_COLOR
 $oldTerm = $env:TERM
+$oldConsoleEncoding = [Console]::OutputEncoding
 $env:CI = '1'
 $env:NO_COLOR = '1'
 $env:TERM = 'dumb'
@@ -96,12 +97,23 @@ try {
             '--respect-workspace-trust','false','--prompt-file',$task,'--export',$transcript)
         if ($ResumeSessionId) { $arguments += @('--resume',$ResumeSessionId) }
         & devin @arguments 1> $stdout 2> $stderr
-    } else {
+    } elseif ($Agent -eq 'claude') {
         $arguments = @('--print','--output-format','json')
         if ($ResumeSessionId) { $arguments += @('--resume',$ResumeSessionId) }
         # Claude CLI reads the task file from stdin; avoid putting large prompts in argv.
         Get-Content -LiteralPath $task -Raw -Encoding utf8 |
             & claude @arguments 'Complete the task specified in standard input.' 1> $stdout 2> $stderr
+    } else {
+        # PowerShell versions before 7.4 decode redirected native output as console text.
+        [Console]::OutputEncoding = [Text.Encoding]::UTF8
+        $arguments = @('--input-format','stream-json','--output-format','stream-json')
+        if ($ResumeSessionId) { $arguments += @('--conversation',$ResumeSessionId) }
+        $message = @{
+            event = 'user'
+            message = @{ content = (Get-Content -LiteralPath $task -Raw -Encoding utf8) }
+        }
+        $message | ConvertTo-Json -Compress -EscapeHandling EscapeNonAscii |
+            & agy @arguments 1> $stdout 2> $stderr
     }
     $code = $LASTEXITCODE
 } catch {
@@ -111,6 +123,7 @@ try {
     $env:CI = $oldCI
     $env:NO_COLOR = $oldNoColor
     $env:TERM = $oldTerm
+    if ($Agent -eq 'agy') { [Console]::OutputEncoding = $oldConsoleEncoding }
 }
 if ($null -eq $code) { $code = 1 }
 if ($Agent -eq 'devin' -and -not $ResumeSessionId) {
@@ -135,6 +148,33 @@ if ($Agent -eq 'claude') {
         [IO.File]::WriteAllText($resultFile, 'Claude did not return valid JSON. See stdout.log and stderr.log.', [Text.Encoding]::UTF8)
         $agentError = $true
     }
+} elseif ($Agent -eq 'agy') {
+    $result = $null
+    if (Test-Path -LiteralPath $stdout) {
+        foreach ($line in [IO.File]::ReadLines($stdout, [Text.Encoding]::UTF8)) {
+            try { $event = ConvertFrom-Json -InputObject $line -AsHashtable -NoEnumerate -ErrorAction Stop }
+            catch { continue }
+            if ($event -is [System.Collections.IDictionary] -and $event['event'] -ceq 'result') {
+                $result = $event['result']
+            }
+        }
+    }
+
+    $reply = 'Antigravity did not return a valid result event. See stdout.log and stderr.log.'
+    $agentError = $true
+    if ($result -is [System.Collections.IDictionary]) {
+        if ($result['conversation_id'] -is [string] -and $result['conversation_id']) {
+            $session = $result['conversation_id']; $source = 'agy-json'
+        }
+        if ($result['response'] -is [string]) {
+            $agentError = $result['status'] -cne 'SUCCESS'
+            $reply = $result['response']
+            if ($agentError -and [string]::IsNullOrWhiteSpace($reply)) {
+                $reply = 'Antigravity did not complete the turn. See stdout.log and stderr.log.'
+            }
+        }
+    }
+    [IO.File]::WriteAllText($resultFile, (Clean-Ansi $reply), [Text.Encoding]::UTF8)
 } else {
     $raw = if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -Raw -Encoding utf8 } else { '' }
     [IO.File]::WriteAllText($resultFile, (Clean-Ansi $raw), [Text.Encoding]::UTF8)
