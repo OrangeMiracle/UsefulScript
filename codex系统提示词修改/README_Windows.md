@@ -10,6 +10,7 @@
 |---|---|
 | `base_instructions.md` | 主系统提示词，三个模型共用 |
 | `sub_prompts.md` | 按场景追加的子提示词，这份取自 GPT-6.2-Astra 原版，未做修改 |
+| `README_Linux.md` | 在 Linux（虚拟机 `dev-local`）上安装和更新这份提示词的步骤 |
 
 ## 工作原理
 
